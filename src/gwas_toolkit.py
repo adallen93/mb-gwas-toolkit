@@ -16,6 +16,9 @@ This Module Provides The Following Classes:
 import sqlite3
 from typing import Any, Dict, Tuple
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 class GWAS_Object:
     """Represents A Finished GWAS Analysis."""
@@ -40,20 +43,43 @@ class GWAS_Object:
         significant_tests = 3000  # ^To Be Replaced.
         return significant_tests
 
-    def Alpha_Level(self) -> int:
+    def Alpha_Level(self) -> float:
         """Calculates The Adjusted Significance Level From The GWAS Data."""
         alpha = 0.05 / self.number_of_significant_tests
         return alpha
 
     def Manhattan_Plot(self) -> Any:
         """Creates A Manhattan Plot To Visualize The GWAS Analysis."""
-        # Implement A Method By Package To Create A Manhattan Plot.
-        # Leverage The Genetic Markers Dictionary and Get P-Values.
+        c = self.connection.cursor()
+        c.execute("SELECT Chromosome, Location, PValue FROM gwas")
+        data = c.fetchall()
+        if not data:
+            raise ValueError("No data to plot.")
+        chromosomes: Dict[Any, Any] = {}
+        for chromosome, position, pvalue in data:
+            if chromosome not in chromosomes:
+                chromosomes[chromosome] = {"x": [], "y": []}
+            if pvalue == 0:
+                pvalue = 1e-300
+            logpvalue = -np.log10(pvalue)
+            chromosomes[chromosome]["x"].append(position)
+            chromosomes[chromosome]["y"].append(logpvalue)
+        plt.figure(figsize=(12, 6))
+        for chrom, positions in chromosomes.items():
+            plt.scatter(
+                positions["x"], positions["y"], label=f"Chromosome {chrom}"
+            )
+        plt.xlabel("Genomic Position")
+        plt.ylabel("-log10(P-Value)")
+        plt.title("Manhattan Plot")
+        plt.legend()
+        plt.show()
 
     def QQ_Plot(self) -> Any:
         """Creates A QQ Plot To Visualize The GWAS Analysis."""
         # Implement A Method By Package To Create A QQ Plot.
         # Leverage The Genetic Markers Dictionary and Get P-Values.
+        # Then Plot P-Values Across Chromosome Bins By Location.
 
 
 def Parse_GWAS_Output(
