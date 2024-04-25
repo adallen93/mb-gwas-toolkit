@@ -1,4 +1,4 @@
-"marker","chrom","pos","Time.to.Flowering"
+"MarkerID","Chromosome","Location","PValue"
 "id1000001",1,13147,1.66632678935096
 "id1000003",1,73192,1.61574777037295
 "id1000005",1,74969,0.182126726740502

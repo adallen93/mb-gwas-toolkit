@@ -57,6 +57,9 @@ class GWAS_Object:
             raise ValueError("No data to plot.")
         chromosomes: Dict[Any, Any] = {}
         for chromosome, position, pvalue in data:
+            chromosome = int(chromosome)
+            position = int(position)
+            pvalue = float(pvalue)
             if chromosome not in chromosomes:
                 chromosomes[chromosome] = {"x": [], "y": []}
             if pvalue == 0:
@@ -85,29 +88,43 @@ class GWAS_Object:
 def Parse_GWAS_Output(
     gwas_output_file: str, delimiter: str, conn: sqlite3.Connection
 ) -> None:
-    """Parses Patient And Lab Data From Files Into An SQL Database."""
+    """Parses GWAS Output Files From Files Into An SQL Database."""
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS gwas (
                  MarkerID TEXT,
                  Chromosome TEXT,
                  Location REAL,
-                 Phenotype TEXT,
+                 PValue TEXT,
                  FOREIGN KEY (MarkerID) REFERENCES gwas(MarkerID))""")
     with open(gwas_output_file, encoding="utf-8") as gwas_output:
         gwas_output_head = gwas_output.readline().strip().split(delimiter)
-        for line in gwas_output_file:
+        for line in gwas_output:
             gwas_output_data = dict(
-                zip(gwas_output_head, line.strip().split(delimiter))
+                (key.strip('"'), value.strip('"'))
+                for key, value in zip(
+                    gwas_output_head, line.strip().split(delimiter)
+                )
             )
             c.execute(
-                """INSERT OR IGNORE INTO patients 
-                (MarkerID, Chromosome, Location, Phenotype)
+                """INSERT or IGNORE INTO gwas
+                (MarkerID, Chromosome, Location, PValue)
                 VALUES (?, ?, ?, ?)""",
                 (
                     gwas_output_data.get("MarkerID", ""),
-                    gwas_output_data.get("Chrmosome", ""),
+                    gwas_output_data.get("Chromosome", ""),
                     gwas_output_data.get("Location", ""),
-                    gwas_output_data.get("Phenotype", ""),
+                    gwas_output_data.get("PValue", ""),
                 ),
             )
     conn.commit()
+
+
+# Establish an in-memory SQLite database connection
+conn = sqlite3.connect(":memory:")
+
+Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
+
+gwas_obj = GWAS_Object(conn)
+
+# Call Manhattan_Plot and display the plot
+gwas_obj.Manhattan_Plot()
