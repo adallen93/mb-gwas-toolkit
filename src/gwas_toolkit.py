@@ -1,4 +1,4 @@
-"""GWAS Toolkit for Genomic Data Analysis in Python.
+"""Toolkit for Graphical GWAS Analysis in Python.
 
 Created by Austin Allen, Julia Benendetti, and Jonathan Hui.
 
@@ -11,6 +11,7 @@ This Module Provides The Following Functions:
 
 This Module Provides The Following Classes:
 - GWAS_Object: An Object Containing The Output Of A GWAS Analysis.
+- DataNotFoundError: An Error Called When GWAS Output Cannot Be Found
 """
 
 import sqlite3
@@ -20,8 +21,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+class DataNotFoundError(Exception):
+    """An Error Called When The GWAS Output Cannot Be Found."""
+
+    pass
+
+
 class GWAS_Object:
-    """Represents A Finished GWAS Analysis."""
+    """Represents The Output Of A Finished GWAS Analysis."""
 
     def __init__(self, conn: sqlite3.Connection):
         """Initializes A GWAS Output Object."""
@@ -55,7 +62,8 @@ class GWAS_Object:
         c.execute("SELECT Chromosome, Location, PValue FROM gwas")
         data = c.fetchall()
         if not data:
-            raise ValueError("No data to plot.")
+            raise DataNotFoundError("No data to plot.")
+
         # Step 2: Build The Plot From Chromosome Location and P-Value.
         chromosomes: Dict[Any, Any] = {}
         max_position = 0
@@ -71,8 +79,10 @@ class GWAS_Object:
             chromosomes[chromosome]["x"].append(position)
             chromosomes[chromosome]["y"].append(logpvalue)
             max_position = max(max_position, position)
+
         # Step 3: Initialize The Manhattan Plot's Dimensions.
         plt.figure(figsize=(12, 6))
+
         # Step 4: Stratify Each Chromosome Into Their Own Location Bins.
         label_at_bin_median = []
         current_position = 0
@@ -86,7 +96,17 @@ class GWAS_Object:
             label_at_bin_median.append(
                 current_position - max(positions["x"]) / 2
             )
-        # Step 5: Put Everything Together And Construct The Plot.
+
+        # Step 5: Draw A Horizontal Line At The Significance Level
+        significancelevel: float = self.Alpha_Level()
+        plt.axhline(
+            -np.log10(significancelevel),
+            color="r",
+            linestyle="--",
+            label=f"-log10({significancelevel}) significance level",
+        )
+
+        # Step 6: Put Everything Together And Construct The Plot.
         plt.xlabel("Genomic Position")
         plt.ylabel("-log10(P-Value)")
         plt.title("Manhattan Plot")
@@ -103,7 +123,7 @@ class GWAS_Object:
         c.execute("SELECT PValue FROM gwas")
         pvalues = np.array(c.fetchall(), dtype=float)
         if not pvalues.any():
-            raise ValueError("No data to plot.")
+            raise DataNotFoundError("No data to plot.")
         # Step 2: Create a QQ Plot With The GWAS Output's PValues.
         n = len(pvalues)
         expected_quantiles = -np.log10(np.arange(1, n + 1) / n)
