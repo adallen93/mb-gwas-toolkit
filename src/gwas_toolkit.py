@@ -50,11 +50,13 @@ class GWAS_Object:
 
     def Manhattan_Plot(self) -> Any:
         """Creates A Manhattan Plot To Visualize The GWAS Analysis."""
+        # Step 1: Retrieve Data From The SQLite Database.
         c = self.connection.cursor()
         c.execute("SELECT Chromosome, Location, PValue FROM gwas")
         data = c.fetchall()
         if not data:
             raise ValueError("No data to plot.")
+        # Step 2: Build The Plot From Chromosome Location and P-Value.
         chromosomes: Dict[Any, Any] = {}
         max_position = 0
         for chromosome, position, pvalue in data:
@@ -69,8 +71,10 @@ class GWAS_Object:
             chromosomes[chromosome]["x"].append(position)
             chromosomes[chromosome]["y"].append(logpvalue)
             max_position = max(max_position, position)
+        # Step 3: Initialize The Manhattan Plot's Dimensions.
         plt.figure(figsize=(12, 6))
-        label_at_midpoints = []
+        # Step 4: Stratify Each Chromosome Into Their Own Location Bins.
+        label_at_bin_median = []
         current_position = 0
         for chromie, positions in chromosomes.items():
             plt.scatter(
@@ -79,23 +83,47 @@ class GWAS_Object:
                 label=f"Chromosome {chromie}",
             )
             current_position += max(positions["x"])
-            label_at_midpoints.append(
+            label_at_bin_median.append(
                 current_position - max(positions["x"]) / 2
             )
+        # Step 5: Put Everything Together And Construct The Plot.
         plt.xlabel("Genomic Position")
         plt.ylabel("-log10(P-Value)")
         plt.title("Manhattan Plot")
         plt.xticks(
-            label_at_midpoints, [f"{chromie}" for chromie in chromosomes]
+            label_at_bin_median, [f"{chromie}" for chromie in chromosomes]
         )
         plt.ylim(0)
         plt.show()
 
     def QQ_Plot(self) -> Any:
         """Creates A QQ Plot To Visualize The GWAS Analysis."""
-        # Implement A Method By Package To Create A QQ Plot.
-        # Leverage The Genetic Markers Dictionary and Get P-Values.
-        # Then Plot P-Values Across Chromosome Bins By Location.
+        # Step 1: Retrieve Data From The SQLite Database.
+        c = self.connection.cursor()
+        c.execute("SELECT PValue FROM gwas")
+        pvalues = np.array(c.fetchall(), dtype=float)
+        if not pvalues.any():
+            raise ValueError("No data to plot.")
+        # Step 2: Create a QQ Plot With The GWAS Output's PValues.
+        n = len(pvalues)
+        expected_quantiles = -np.log10(np.arange(1, n + 1) / n)
+        plt.figure(figsize=(6, 6))
+        plt.scatter(
+            expected_quantiles,
+            -np.log10(np.sort(pvalues.flatten())),
+            color="blue",
+            alpha=0.7,
+        )
+        plt.plot(
+            [0, max(expected_quantiles)],
+            [0, max(expected_quantiles)],
+            color="red",
+            linestyle="--",
+        )
+        plt.xlabel("Expected -log10(P-Value)")
+        plt.ylabel("Observed -log10(P-Value)")
+        plt.title("QQ Plot")
+        plt.show()
 
 
 def Parse_GWAS_Output(
@@ -130,9 +158,3 @@ def Parse_GWAS_Output(
                 ),
             )
     conn.commit()
-
-
-conn = sqlite3.connect(":memory:")
-Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
-gwas_obj = GWAS_Object(conn)
-gwas_obj.Manhattan_Plot()
