@@ -56,26 +56,39 @@ class GWAS_Object:
         if not data:
             raise ValueError("No data to plot.")
         chromosomes: Dict[Any, Any] = {}
+        max_position = 0
         for chromosome, position, pvalue in data:
             chromosome = int(chromosome)
             position = int(position)
             pvalue = float(pvalue)
-            if chromosome not in chromosomes:
-                chromosomes[chromosome] = {"x": [], "y": []}
             if pvalue == 0:
                 pvalue = 1e-300
             logpvalue = -np.log10(pvalue)
+            if chromosome not in chromosomes:
+                chromosomes[chromosome] = {"x": [], "y": []}
             chromosomes[chromosome]["x"].append(position)
             chromosomes[chromosome]["y"].append(logpvalue)
+            max_position = max(max_position, position)
         plt.figure(figsize=(12, 6))
-        for chrom, positions in chromosomes.items():
+        label_at_midpoints = []
+        current_position = 0
+        for chromie, positions in chromosomes.items():
             plt.scatter(
-                positions["x"], positions["y"], label=f"Chromosome {chrom}"
+                np.array(positions["x"]) + current_position,
+                positions["y"],
+                label=f"Chromosome {chromie}",
+            )
+            current_position += max(positions["x"])
+            label_at_midpoints.append(
+                current_position - max(positions["x"]) / 2
             )
         plt.xlabel("Genomic Position")
         plt.ylabel("-log10(P-Value)")
         plt.title("Manhattan Plot")
-        plt.legend()
+        plt.xticks(
+            label_at_midpoints, [f"{chromie}" for chromie in chromosomes]
+        )
+        plt.ylim(0)
         plt.show()
 
     def QQ_Plot(self) -> Any:
@@ -119,12 +132,7 @@ def Parse_GWAS_Output(
     conn.commit()
 
 
-# Establish an in-memory SQLite database connection
 conn = sqlite3.connect(":memory:")
-
 Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
-
 gwas_obj = GWAS_Object(conn)
-
-# Call Manhattan_Plot and display the plot
 gwas_obj.Manhattan_Plot()
