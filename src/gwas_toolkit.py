@@ -7,11 +7,10 @@ This Module Provides The Following Functions:
     - The Input File Should Include ID, Chromasome, Location, and P-Value.
 - Alpha_Level: Determines The Significance Level With A Bonferroni Correction.
 - Manhattan_Plot: Creates A Manhattan Plot For A Given GWAS Object.
-- QQ_Plot
+- QQ_Plot: Creates A QQ Plot For A Given GWAS Object.
 
 This Module Provides The Following Classes:
 - GWAS_Object: An Object Containing The Output Of A GWAS Analysis.
-- MissingDataError: Called When The Genomic Data File Contains Missing Data
 """
 
 import sqlite3
@@ -35,11 +34,13 @@ class GWAS_Object:
         return genemap
 
     @property
-    def number_of_significant_tests(Self) -> Any:
+    def number_of_significant_tests(Self) -> int:
         """Finds The Number Of Significant Tests."""
         # Implement A Method By Package To Calculate # Of Sig. Tests.
+        significant_tests = 3000  # ^To Be Replaced.
+        return significant_tests
 
-    def Alpha_Level(self) -> Any:
+    def Alpha_Level(self) -> int:
         """Calculates The Adjusted Significance Level From The GWAS Data."""
         alpha = 0.05 / self.number_of_significant_tests
         return alpha
@@ -47,12 +48,12 @@ class GWAS_Object:
     def Manhattan_Plot(self) -> Any:
         """Creates A Manhattan Plot To Visualize The GWAS Analysis."""
         # Implement A Method By Package To Create A Manhattan Plot.
-        # Leverage The Genetic Markers Dictionary.
+        # Leverage The Genetic Markers Dictionary and Get P-Values.
 
     def QQ_Plot(self) -> Any:
         """Creates A QQ Plot To Visualize The GWAS Analysis."""
         # Implement A Method By Package To Create A QQ Plot.
-        # Leverage The Genetic Markers Dictionary.
+        # Leverage The Genetic Markers Dictionary and Get P-Values.
 
 
 def Parse_GWAS_Output(
