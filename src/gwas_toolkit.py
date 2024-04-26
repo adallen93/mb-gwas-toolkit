@@ -203,12 +203,3 @@ def Parse_GWAS_Output(
                 ),
             )
     conn.commit()
-
-
-conn = sqlite3.connect(":memory:")
-Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
-print(GWAS_Object(conn).N_of_Significant_Tests)
-print(GWAS_Object(conn).Alpha_Level)
-print(GWAS_Object(conn).Significant_Results())
-print(GWAS_Object(conn).Manhattan_Plot)
-print(GWAS_Object(conn).QQ_Plot)
