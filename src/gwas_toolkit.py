@@ -5,17 +5,22 @@ Created by Austin Allen, Julia Benendetti, and Jonathan Hui.
 This Module Provides The Following Functions:
 - Parse_GWAS_Output: Stores GWAS Output Into An SQLite Database.
     - The Input File Should Include ID, Chromasome, Location, and P-Value.
-- Alpha_Level: Determines The Significance Level With A Bonferroni Correction.
-- Manhattan_Plot: Creates A Manhattan Plot For A Given GWAS Object.
-- QQ_Plot: Creates A QQ Plot For A Given GWAS Object.
 
 This Module Provides The Following Classes:
 - GWAS_Object: An Object Containing The Output Of A GWAS Analysis.
-- DataNotFoundError: An Error Called When GWAS Output Cannot Be Found
+- DataNotFoundError: An Error Called When GWAS Output Cannot Be Found.
+- NoSignificantGenesError: An Error Called When There Are No Significant Genes.
+
+This Module Provides The Following Attributes That A GWAS_Object Inherits:
+- N_of_Significant_Tests: Provides The Number Of Sig. Tests For The Given Data.
+- Alpha_Level: Determines The Significance Level With A Bonferroni Correction.
+- Manhattan_Plot: Creates A Manhattan Plot For A Given GWAS Object.
+- QQ_Plot: Creates A QQ Plot For A Given GWAS Object.
+- Significant_Results: A Function That Lists The Significant Gene Markers.
 """
 
 import sqlite3
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -23,6 +28,12 @@ import numpy as np
 
 class DataNotFoundError(Exception):
     """An Error Called When The GWAS Output Cannot Be Found."""
+
+    pass
+
+
+class NoSignificantGenesError(Exception):
+    """An Error Called When The GWAS Output Finds No Significant Genes."""
 
     pass
 
@@ -35,27 +46,20 @@ class GWAS_Object:
         self.connection = conn
 
     @property
-    def genetic_mapping(self) -> Dict[str, Tuple[str, float]]:
-        """Retrieve Chromosome and Position For Each MarkerID."""
-        c = self.connection.cursor()
-        c.execute("SELECT MarkerID, Chromosome, Location FROM gwas")
-        results = c.fetchall()
-        genemap = {result[0]: (result[1], result[2]) for result in results}
-        return genemap
-
-    @property
-    def number_of_significant_tests(Self) -> int:
+    def N_of_Significant_Tests(Self) -> int:
         """Finds The Number Of Significant Tests."""
         # Implement A Method By Package To Calculate # Of Sig. Tests.
         significant_tests = 3000  # ^To Be Replaced.
         return significant_tests
 
+    @property
     def Alpha_Level(self) -> float:
         """Calculates The Adjusted Significance Level From The GWAS Data."""
-        alpha = 0.05 / self.number_of_significant_tests
+        alpha = 0.05 / self.N_of_Significant_Tests
         return alpha
 
-    def Manhattan_Plot(self) -> Any:
+    @property
+    def Manhattan_Plot(self) -> str:
         """Creates A Manhattan Plot To Visualize The GWAS Analysis."""
         # Step 1: Retrieve Data From The SQLite Database.
         c = self.connection.cursor()
@@ -98,7 +102,7 @@ class GWAS_Object:
             )
 
         # Step 5: Draw A Horizontal Line At The Significance Level
-        significancelevel: float = self.Alpha_Level()
+        significancelevel: float = self.Alpha_Level
         plt.axhline(
             -np.log10(significancelevel),
             color="r",
@@ -115,8 +119,10 @@ class GWAS_Object:
         )
         plt.ylim(0)
         plt.show()
+        return "The Manhattan Plot Has Been Made In A Separate Window."
 
-    def QQ_Plot(self) -> Any:
+    @property
+    def QQ_Plot(self) -> str:
         """Creates A QQ Plot To Visualize The GWAS Analysis."""
         # Step 1: Retrieve Data From The SQLite Database.
         c = self.connection.cursor()
@@ -124,19 +130,22 @@ class GWAS_Object:
         pvalues = np.array(c.fetchall(), dtype=float)
         if not pvalues.any():
             raise DataNotFoundError("No data to plot.")
-        # Step 2: Create a QQ Plot With The GWAS Output's PValues.
+
+        # Step 2: Get Theoretical Quantiles With The GWAS Output's PValues.
         n = len(pvalues)
-        expected_quantiles = -np.log10(np.arange(1, n + 1) / n)
+        theoretical_quantiles = -np.log10(np.arange(1, n + 1) / n)
         plt.figure(figsize=(6, 6))
         plt.scatter(
-            expected_quantiles,
+            theoretical_quantiles,
             -np.log10(np.sort(pvalues.flatten())),
             color="blue",
             alpha=0.7,
         )
+
+        # Step 3: Put Everything Together And Construct The Plot.
         plt.plot(
-            [0, max(expected_quantiles)],
-            [0, max(expected_quantiles)],
+            [0, max(theoretical_quantiles)],
+            [0, max(theoretical_quantiles)],
             color="red",
             linestyle="--",
         )
@@ -144,6 +153,22 @@ class GWAS_Object:
         plt.ylabel("Observed -log10(P-Value)")
         plt.title("QQ Plot")
         plt.show()
+        return "The QQ Plot Has Been Made In A Separate Window."
+
+    def Significant_Results(self) -> List[str]:
+        """Identifies The Names Of Gene Markers With Significant P-Values."""
+        c = self.connection.cursor()
+        c.execute("SELECT MarkerID, PValue FROM gwas")
+        data = c.fetchall()
+        significant_gene_markers = []
+        for marker_id, pvalue in data:
+            if float(pvalue) < float(self.Alpha_Level):
+                significant_gene_markers.append(marker_id)
+        if not significant_gene_markers:
+            raise NoSignificantGenesError(
+                "There Are No Significant Gene Markers In This GWAS Output."
+            )
+        return significant_gene_markers
 
 
 def Parse_GWAS_Output(
@@ -178,3 +203,12 @@ def Parse_GWAS_Output(
                 ),
             )
     conn.commit()
+
+
+conn = sqlite3.connect(":memory:")
+Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
+print(GWAS_Object(conn).N_of_Significant_Tests)
+print(GWAS_Object(conn).Alpha_Level)
+print(GWAS_Object(conn).Significant_Results())
+print(GWAS_Object(conn).Manhattan_Plot)
+print(GWAS_Object(conn).QQ_Plot)
