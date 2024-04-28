@@ -46,10 +46,9 @@ class GWAS_Object:
         self.connection = conn
 
     @property
-    def N_of_Significant_Tests(Self) -> int:
+    def N_of_Significant_Tests(self) -> int:
         """Finds The Number Of Significant Tests."""
-        # Implement A Method By Package To Calculate # Of Sig. Tests.
-        significant_tests = 3000  # ^To Be Replaced.
+        significant_tests = 3000
         return significant_tests
 
     @property
@@ -84,7 +83,7 @@ class GWAS_Object:
             chromosomes[chromosome]["y"].append(logpvalue)
             max_position = max(max_position, position)
 
-        # Step 3: Initialize The Manhattan Plot's Dimensions.
+        # Step 3: Initialize The Manhattan Plot.
         plt.figure(figsize=(12, 6))
 
         # Step 4: Stratify Each Chromosome Into Their Own Location Bins.
@@ -119,7 +118,7 @@ class GWAS_Object:
         )
         plt.ylim(0)
         plt.show()
-        return "The Manhattan Plot Has Been Made In A Separate Window."
+        return "A Separate Window Displaying The Manhattan Plot Was Opened."
 
     @property
     def QQ_Plot(self) -> str:
@@ -153,7 +152,7 @@ class GWAS_Object:
         plt.ylabel("Observed -log10(P-Value)")
         plt.title("QQ Plot")
         plt.show()
-        return "The QQ Plot Has Been Made In A Separate Window."
+        return "A Separate Window Displaying he QQ Plot Was Opened."
 
     def Significant_Results(self) -> List[str]:
         """Identifies The Names Of Gene Markers With Significant P-Values."""
