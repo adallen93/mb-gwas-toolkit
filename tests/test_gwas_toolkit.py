@@ -23,10 +23,11 @@ import sqlite3
 import unittest
 from unittest.mock import patch
 
+import pytest
 from gwas_toolkit import (
+    Benjamini_Hochberg_Procedure,
     DataNotFoundError,
     GWAS_Object,
-    NoSignificantGenesError,
     Parse_GWAS_Output,
 )
 
@@ -154,11 +155,57 @@ class TestGWASAnalysis(unittest.TestCase):
 
         # Call Manhattan_Plot method
         with self.assertRaises(DataNotFoundError):
-            gwas_obj.Manhattan_Plot
+            gwas_obj.Print_Manhattan_Plot()
 
         # Call QQ_Plot method
         with self.assertRaises(DataNotFoundError):
-            gwas_obj.QQ_Plot
+            gwas_obj.Print_QQ_Plot()
+
+
+def test_benjamini_hochberg() -> None:
+    """Testing the Benjamini_Hochberg_Procedure() function."""
+    # Dummy data
+    data = [
+        ("A", 0.05),
+        ("B", 0.01),
+        ("C", 0.3),
+    ]
+
+    # Expected results after correction
+    expected_results = {
+        "A": False,
+        "B": True,
+        "C": False,
+    }
+
+    # Run the function
+    actual_results = Benjamini_Hochberg_Procedure(data)
+
+    # Assert the results
+    assert actual_results == expected_results
+
+
+# Test with invalid data types
+def test_benjamini_hochberg_invalid_data() -> None:
+    """Tests that a TypeError is raised with invalid types in 'data'."""
+    with pytest.raises(TypeError):
+        Benjamini_Hochberg_Procedure(
+            [1, 2, 3]
+        )  # List of numbers instead of tuples
+
+
+# Test with invalid q value
+def test_benjamini_hochberg_invalid_q() -> None:
+    """Tests that a ValueError is raised with invalid 'q' value."""
+    # Dummy data
+    data = [
+        ("A", 0.1),
+        ("B", 0.01),
+        ("C", 0.3),
+    ]
+
+    with pytest.raises(ValueError):
+        Benjamini_Hochberg_Procedure(data, q=1.2)
 
 
 if __name__ == "__main__":

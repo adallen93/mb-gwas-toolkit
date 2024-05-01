@@ -11,9 +11,9 @@ This Module Provides The Following Classes:
 - DataNotFoundError: An Error Called When GWAS Output Cannot Be Found.
 - NoSignificantGenesError: An Error Called When There Are No Significant Genes.
 
-This Module Provides The Following Attributes That A GWAS_Object Inherits:
+This Module Provides The Following Attributes of a GWAS Object:
 - N_of_Significant_Tests: Provides The Number Of Sig. Tests For The Given Data.
-- Alpha_Level: Determines The Significance Level With A Bonferroni Correction.
+- Alpha_Level: Default Sig Level Is 0.05 Unless Specified In Initialization
 - Manhattan_Plot: Creates A Manhattan Plot For A Given GWAS Object.
 - QQ_Plot: Creates A QQ Plot For A Given GWAS Object.
 - Significant_Results: A Function That Lists The Significant Gene Markers.
@@ -227,17 +227,37 @@ def Benjamini_Hochberg_Procedure(
     """Multiple testing correction which controls FDR."""
     test_results: dict[str, bool] = {}
 
+    # Type check for `data`
+    if not all(
+        isinstance(item, tuple)
+        and len(item) == 2
+        and isinstance(item[0], str)
+        and isinstance(item[1], float)
+        for item in data
+    ):
+        raise TypeError(
+            "data must be a list of tuples where each tuple is (str, float)"
+        )
+
+    # Ensure `q` is between 0 and 1
+    if not 0 < q < 1:
+        raise ValueError("q must be between 0 and 1")
+
     # p-values must be sorted for the Benjamanai-Hochberg method
     data.sort(key=lambda x: x[1])
 
     # Conduct the corrected test for each p-value
-    for index, results in enumerate(data):
+    for i, results in enumerate(data):
         # Extract id and p-value from results for readability
         id = results[0]
         p_value = results[1]
+        index = i + 1  # per procedure requirements
 
         # Add the corrected test results to `test_results` under `id`
         # Note that `True` indicates there is a result, meaning H0 was rejected
         test_results[id] = p_value < (q * index) / len(data)
 
     return test_results
+
+
+# 0.01 < (0.05 * 1) / 3
