@@ -156,17 +156,20 @@ class GWAS_Object:
 
     def Significant_Results(self) -> List[str]:
         """Identifies The Names Of Gene Markers With Significant P-Values."""
+        # Use connection cursor to retrieve p-values and marker ID
         c = self.connection.cursor()
         c.execute("SELECT MarkerID, PValue FROM gwas")
         data = c.fetchall()
-        significant_gene_markers = []
-        for marker_id, pvalue in data:
-            if float(pvalue) < float(self.Alpha_Level):
-                significant_gene_markers.append(marker_id)
-        if not significant_gene_markers:
-            raise NoSignificantGenesError(
-                "There Are No Significant Gene Markers In This GWAS Output."
-            )
+
+        # Determine significant tests based on the Benjamani-Hochberg procedure
+        significant_gene_markers: list[str] = []
+        test_results = benjamani_hochberg_method(data)
+
+        # Add significant results to the final
+        for id, result in test_results.items():
+            if result:
+                significant_gene_markers.append(id)
+
         return significant_gene_markers
 
 
@@ -202,3 +205,25 @@ def Parse_GWAS_Output(
                 ),
             )
     conn.commit()
+
+
+def benjamani_hochberg_method(
+    data: list[tuple[str, float]], q: float = 0.05
+) -> dict[str, bool]:
+    """Multiple testing correction which controls FDR."""
+    test_results: dict[str, bool] = {}
+
+    # p-values must be sorted for the Benjamanai-Hochberg method
+    data.sort(key=lambda x: x[1])
+
+    # Conduct the corrected test for each p-value
+    for index, results in enumerate(data):
+        # Extract id and p-value from results for readability
+        id = results[0]
+        p_value = results[1]
+
+        # Add the corrected test results to `test_results` under `id`
+        # Note that `True` indicates there is a result, meaning H0 was rejected
+        test_results[id] = p_value < (q * index) / len(data)
+
+    return test_results
