@@ -6,23 +6,19 @@
 * Jonathan Hui
 * Austin Allen
 
-## Description
-
-We want to create a custom python library to handle statistical analyses for GWAS, which is a "genome wide association study". The github repository will include source code, as well as providing tests. Before using our source code, the user must 
-
 ## Background
 Genome wide association studies (GWAS) are observational studies that use genomes to find genetic markers for an outcome. Most commonly, GWAs are used to determine genetic markers for disease. This is done by taking genomes sequenced from subjects with and without disease, and then compared to determine genetic association. In addition to the afore mentioned, another commonly used term that might be useful is a Single nucleotide polymorphism or SNP. These are the building blocks of the DNA sequence that is being tested.
 
 ## Using Toolkit
 
-**Installation**
+**Installation**  
 To install our toolkit, runt he following code in your terminal:
 
 ```bash
 pip install git+https://github.com/adallen93/mb-gwas-toolkit@main
 ```
 
-**Usage**
+**Usage**  
 Once library has been installed, you can import it into any .py file as follows:
 
 ```python
@@ -30,7 +26,7 @@ import gwas_toolkit as gwtk
 ```
 Before using our source code for analysis, users must be ready to provide complete results from a previously preformed GWAS. This means the data should have location (on the genome), allele, and p-value resulting from the GWAS. The following functions can be used to suport findings of the GWAS or a sensetivity analysis. 
 
-**Parsing**
+**Parsing**  
 The following function can be used to Parse Data that is a Delimiter Separated Values table with a column for genetic markers called MarkerID, a column for chromosome number called Chromosome, a column for location called Location, and a column for p-values called PValue. These are consistent with PLINK GWAS Output knitted into csv/tsv files.
 
 ```python
@@ -81,7 +77,7 @@ def Parse_GWAS_Output(
     conn.commit()
 ```
 
-**Manhattan Plot**
+**Manhattan Plot**  
 The following function can be used to create a Manhattan Plot from the data provided:
 
 ```python
@@ -152,7 +148,7 @@ The following function can be used to create a Manhattan Plot from the data prov
 
 Named after the NYC skyline, an ideal Manhattan Plot had chromosomes separated vertically and clearly defined peaks. The points with the highest peaks show the location of the alleles with the highest p-value, meaning they have a larger association with the observed outcome.
 
-**QQ-Plot**
+**QQ-Plot**  
 The following function will produce a QQ-Plot of the data provided:
 
 ```python
@@ -194,7 +190,7 @@ def Print_QQ_Plot(self) -> None:
 ```
 The QQ plot is a graphical representation of the deviation of the observed P values from the null hypothesis. The observed P values for each SNP are sorted from largest to smallest and plotted against expected values from a theoretical chi-squared distribution. 
 
-**Significance**
+**Significance**  
 The following function was created to help users determine significant alleles from the study. GWAS can be tested using millions of Single nucleotide polymorphisms (SNPs). 
 
 ``` python
@@ -221,7 +217,7 @@ def Significant_Results(self) -> List[str]:
 
         return significant_gene_markers
 ```
-**Correction**
+**Correction**  
 One of the most important parts of GWAS is multiple testing correction. Each subject provides a genome containing millions of individual observations creating correlated data. The fllowing function has been created to run a multiple testing correction using the Benjamini Hochberg Method.
 
 ```python
