@@ -68,7 +68,7 @@ class TestGWASAnalysis(unittest.TestCase):
         ]
         c = self.conn.cursor()
         c.executemany(
-            "INSERT INTO gwas (MarkerID, Chromosome, Location, PValue) VALUES (?, ?, ?, ?)",
+            "INSERT INTO gwas (MarkerID, Chromosome, Location, PValue) VALUES",
             test_data,
         )
         self.conn.commit()
