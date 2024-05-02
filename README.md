@@ -260,3 +260,22 @@ def Benjamini_Hochberg_Procedure(
     return test_results
 
 ```
+
+**Testing**  
+Open a terminal and navigate to the project directory if you haven't already. To run all tests, execute the following command in your terminal:
+
+```bash
+python pytests tests
+```
+
+To run specific tests by name, use the -k flag followed by the test name:
+```bash
+pytest -k "test_name"
+```
+
+To generate a detailed report with coverage, you can use the --cov flag:
+```bash
+pytest --cov=path/to/project
+```
+For more options and configurations, refer to the pytest documentation.
+
