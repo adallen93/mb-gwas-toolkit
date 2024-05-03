@@ -10,15 +10,15 @@ This Module Provides The Following Classes:
 - GWAS_Object: An Object Containing The Output Of A GWAS Analysis.
 - DataNotFoundError: An Error Called When GWAS Output Cannot Be Found.
 
-This Module Provides The Following Attributes of a GWAS Object:
+This Module Provides The Following Attributes That A GWAS_Object Inherits:
+- N_of_Significant_Tests: Provides The Number Of Sig. Tests For The Given Data.
+- Alpha_Level: Determines The Significance Level With A Bonferroni Correction.
 - Manhattan_Plot: Creates A Manhattan Plot For A Given GWAS Object.
 - QQ_Plot: Creates A QQ Plot For A Given GWAS Object.
-- Significant_Results: A Function That Lists The Significant Gene Markers.
 """
 
 import sqlite3
-from logging import warning
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,35 +27,38 @@ import numpy as np
 class DataNotFoundError(Exception):
     """An Error Called When The GWAS Output Cannot Be Found."""
 
-    def __init__(self, additional_info: str = "") -> None:
-        """Exception initializer.
-
-        Concatenates 'GWAS output data not found' with message if provided.
-        """
-        super().__init__(f"GWAS output data not found. {additional_info}")
+    pass
 
 
 class GWAS_Object:
     """Represents The Output Of A Finished GWAS Analysis."""
 
-    def __init__(self, conn: sqlite3.Connection, alpha: float = 0.05):
+    def __init__(self, conn: sqlite3.Connection):
         """Initializes A GWAS Output Object."""
         self.connection = conn
 
-        # Ensure alpha is between 0 and 1
-        if not 0 < alpha < 1:
-            raise ValueError("alpha must be between 0 and 1")
+    @property
+    def N_of_Significant_Tests(self) -> int:
+        """Finds The Number Of Significant Tests."""
+        c = self.connection.cursor()
+        c.execute("SELECT COUNT(*) FROM gwas WHERE PValue < ?", (0.05,))
+        significant_tests_count = c.fetchone()[0]
+        return int(significant_tests_count)
 
-        self.Alpha_Level = alpha
+    @property
+    def Alpha_Level(self) -> float:
+        """Calculates The Adjusted Significance Level From The GWAS Data."""
+        alpha = 0.05 / self.N_of_Significant_Tests
+        return alpha
 
-    def Print_Manhattan_Plot(self) -> None:
+    def Print_Manhattan_Plot(self) -> str:
         """Creates A Manhattan Plot To Visualize The GWAS Analysis."""
         # Step 1: Retrieve Data From The SQLite Database.
         c = self.connection.cursor()
         c.execute("SELECT Chromosome, Location, PValue FROM gwas")
         data = c.fetchall()
         if not data:
-            raise DataNotFoundError("Unable to print plot.")
+            raise DataNotFoundError("No data to plot.")
 
         # Step 2: Build The Plot From Chromosome Location and P-Value.
         chromosomes: Dict[Any, Any] = {}
@@ -107,19 +110,17 @@ class GWAS_Object:
             label_at_bin_median, [f"{chromie}" for chromie in chromosomes]
         )
         plt.ylim(0)
-
-        # Print the plot and a message to the user stating the plot has printed
         plt.show()
-        print("A separate window displaying the Manhattan plot was opened.")
+        return "A Separate Window Displaying The Manhattan Plot Was Opened."
 
-    def Print_QQ_Plot(self) -> None:
+    def Print_QQ_Plot(self) -> str:
         """Creates A QQ Plot To Visualize The GWAS Analysis."""
         # Step 1: Retrieve Data From The SQLite Database.
         c = self.connection.cursor()
         c.execute("SELECT PValue FROM gwas")
         pvalues = np.array(c.fetchall(), dtype=float)
         if not pvalues.any():
-            raise DataNotFoundError("Unable to print plot.")
+            raise DataNotFoundError("No data to plot.")
 
         # Step 2: Get Theoretical Quantiles With The GWAS Output's PValues.
         n = len(pvalues)
@@ -142,68 +143,30 @@ class GWAS_Object:
         plt.xlabel("Expected -log10(P-Value)")
         plt.ylabel("Observed -log10(P-Value)")
         plt.title("QQ Plot")
-
-        # Print the plot and a message to the user stating the plot has printed
         plt.show()
-        print("A separate window displaying the Manhattan plot was opened.")
-
-    def Significant_Results(self) -> List[str]:
-        """Identifies The Names Of Gene Markers With Significant P-Values."""
-        # Use connection cursor to retrieve p-values and marker ID
-        c = self.connection.cursor()
-        c.execute("SELECT MarkerID, CAST(PValue AS REAL) FROM gwas")
-        data = c.fetchall()
-        print("####### Hi! Currently in Significant_Results #########")
-        print("data here:")
-        print(data)
-        # Determine significant tests based on the Benjamani-Hochberg procedure
-        test_results = Benjamini_Hochberg_Procedure(data, self.Alpha_Level)
-        significant_gene_markers: list[str] = []
-
-        # Warn the user if no significant gene markers were found
-        if not test_results:
-            warning("No significant gene markers were found.")
-
-        else:
-            # Add significant results to the final
-            for id, result in test_results.items():
-                if result:
-                    significant_gene_markers.append(id)
-
-        return significant_gene_markers
+        return "A Separate Window Displaying he QQ Plot Was Opened."
 
 
 def Parse_GWAS_Output(
     gwas_output_file: str, delimiter: str, conn: sqlite3.Connection
 ) -> None:
     """Parses GWAS Output Files From Files Into An SQL Database."""
-    # Create a cursor to interact with the database
     c = conn.cursor()
-
-    # Create the 'gwas' table if it doesn't already exist
     c.execute("""CREATE TABLE IF NOT EXISTS gwas (
                  MarkerID TEXT,
                  Chromosome TEXT,
                  Location REAL,
-                 PValue REAL,
+                 PValue TEXT,
                  FOREIGN KEY (MarkerID) REFERENCES gwas(MarkerID))""")
-
-    # Open the GWAS output file
     with open(gwas_output_file, encoding="utf-8") as gwas_output:
-        # Read the header line and split it into column names
         gwas_output_head = gwas_output.readline().strip().split(delimiter)
-
-        # Iterate over each line in the GWAS output file
         for line in gwas_output:
-            # Split the line and create a dictionary with column names as keys
             gwas_output_data = dict(
                 (key.strip('"'), value.strip('"'))
                 for key, value in zip(
                     gwas_output_head, line.strip().split(delimiter)
                 )
             )
-
-            # Insert data into the 'gwas' table, ignoring if MarkerID exists
             c.execute(
                 """INSERT or IGNORE INTO gwas
                 (MarkerID, Chromosome, Location, PValue)
@@ -215,48 +178,13 @@ def Parse_GWAS_Output(
                     gwas_output_data.get("PValue", ""),
                 ),
             )
-
-    # Commit changes to the database
     conn.commit()
 
 
-def Benjamini_Hochberg_Procedure(
-    data: list[tuple[str, float]], q: float = 0.05
-) -> dict[str, bool]:
-    """Multiple testing correction which controls FDR."""
-    test_results: dict[str, bool] = {}
-    print("####### Hi! Currently in Benjamini_Hochberg_Procedure #########")
-    print("data here:")
-    print(data)
+# Parses The Dataset
+conn = sqlite3.connect(":memory:")
+Parse_GWAS_Output("tests/test_data.csv", ",", conn)
+gwas_object = GWAS_Object(conn)
 
-    # Type check for `data`
-    if not all(
-        isinstance(item, tuple)
-        and len(item) == 2
-        and isinstance(item[0], str)
-        and isinstance(item[1], float)
-        for item in data
-    ):
-        raise TypeError(
-            "data must be a list of tuples where each tuple is (str, float)"
-        )
-
-    # Ensure `q` is between 0 and 1
-    if not 0 < q < 1:
-        raise ValueError("q must be between 0 and 1")
-
-    # p-values must be sorted for the Benjamanai-Hochberg method
-    data.sort(key=lambda x: x[1])
-
-    # Conduct the corrected test for each p-value
-    for i, results in enumerate(data):
-        # Extract id and p-value from results for readability
-        id = results[0]
-        p_value = results[1]
-        index = i + 1  # per procedure requirements
-
-        # Add the corrected test results to `test_results` under `id`
-        # Note that `True` indicates there is a result, meaning H0 was rejected
-        test_results[id] = p_value < (q * index) / len(data)
-
-    return test_results
+# Find the Alpha Level, Corrected For Multiple Testing
+print(gwas_object.Alpha_Level)
