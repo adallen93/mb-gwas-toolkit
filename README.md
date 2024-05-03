@@ -56,15 +56,6 @@ gwas_object.Print_QQ_Plot()
 ```
 The QQ plot is a graphical representation of the deviation of the observed P values from the null hypothesis. The observed P values for each SNP are sorted from largest to smallest and plotted against expected values from a theoretical chi-squared distribution. 
 
-#### Identifying Significant Alleles
-The following function gives a list of statistically significant alleles from the study.
-
-One of the most important parts of determining statistical significance in a GWAS study is the multiple testing correction. Each subject provides a genome on which thousands of tests (if not millions) are conducted. This package determines statistically significant alleles at the 0.05 level, adjusted using the **Benjamini–Hochberg method** for multiple comparisons.
-
-``` python
-gwas_object.Significant_Results()
-```
-
 A **demonstration** of all of these functions are provided by running the code in: demo/demo_gwas_toolkit.py
 
 
