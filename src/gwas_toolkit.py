@@ -185,7 +185,7 @@ def Parse_GWAS_Output(
                  MarkerID TEXT,
                  Chromosome TEXT,
                  Location REAL,
-                 PValue TEXT,
+                 PValue REAL,
                  FOREIGN KEY (MarkerID) REFERENCES gwas(MarkerID))""")
 
     # Open the GWAS output file
