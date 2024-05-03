@@ -26,7 +26,7 @@ import gwas_toolkit as gwtk
 
 Before using our source code for analysis, users must be ready to provide complete results from a previously preformed GWAS. This means the data should have location (on the genome), allele, and p-value resulting from a completed GWAS analysis.  A common way to get this type of data is by using PLINK to run a GWAS analysis, and then exporting the output of that analysis as a comma-separated value (csv) file.  If the user provides exported GWAS output from PLINK, the csv file will have a column for genetic markers called MarkerID, a column for chromosome number called Chromosome, a column for location called Location, and a column for p-values called PValue.
 
-**Parsing GWAS Data**
+#### Parsing GWAS Data
 The package then provides a method to parse a csv file of those specifications into an SQLite database.
 
 ```python
@@ -35,7 +35,7 @@ Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
 gwas_object = GWAS_Object(conn)
 ```
 
-**Manhattan Plot**  
+#### Manhattan Plot
 The following function can be used to create a Manhattan Plot from the data provided:
 
 ```python
@@ -44,7 +44,7 @@ gwas_object.Print_Manhattan_Plot()
 
 Named after the NYC skyline, an ideal Manhattan Plot had chromosomes separated vertically and clearly defined peaks. The points with the highest peaks show the location of the alleles with the highest p-value, meaning they have a larger association with the observed outcome.
 
-**QQ-Plot**  
+#### QQ-Plot
 The following function will produce a QQ-Plot of the data provided:
 
 ```python
@@ -52,10 +52,10 @@ gwas_object.Print_QQ_Plot()
 ```
 The QQ plot is a graphical representation of the deviation of the observed P values from the null hypothesis. The observed P values for each SNP are sorted from largest to smallest and plotted against expected values from a theoretical chi-squared distribution. 
 
-**Identifying Significant Alleles**  
-The following function prints a list of statistically significant alleles from the study.
+#### Identifying Significant Alleles
+The following function gives a list of statistically significant alleles from the study.
 
-One of the most important parts of determining statistical significance in a GWAS study is the multiple testing correction. Each subject provides a genome on which thousands of tests (if not millions) are conducted. This package determines statistically significant alleles at the 0.05 level, adjusted using the Hochberg Method.
+One of the most important parts of determining statistical significance in a GWAS study is the multiple testing correction. Each subject provides a genome on which thousands of tests (if not millions) are conducted. This package determines statistically significant alleles at the 0.05 level, adjusted using the **Benjamini–Hochberg method** for multiple comparisons.
 
 ``` python
 gwas_object.Significant_Results()
