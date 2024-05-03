@@ -56,7 +56,7 @@ gwas_object.Print_QQ_Plot()
 ```
 The QQ plot is a graphical representation of the deviation of the observed P values from the null hypothesis. The observed P values for each SNP are sorted from largest to smallest and plotted against expected values from a theoretical chi-squared distribution. 
 
-A **demonstration** of all of these functions are provided by running the code in: demo/demo_gwas_toolkit.py
+A **demonstration** of all of these functions are provided by running the sample code in: src/demo_GWAS_Outcome.py
 
 
 ## For Contributors: 
