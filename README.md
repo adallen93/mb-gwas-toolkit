@@ -6,8 +6,10 @@
 * Julia Bennedetti
 * Jonathan Hui
 
+
 ## Background
 Genome wide association studies (GWAS) are observational studies that use genomes to find genetic markers for an outcome. Most commonly, GWAs are used to determine genetic markers for disease. This is done by taking genomes sequenced from subjects with and without disease, and then compared to determine genetic association. In addition to the afore mentioned, another commonly used term that might be useful is a Single nucleotide polymorphism or SNP. These are the building blocks of the DNA sequence that is being tested.  We seek to provide a toolkit to create relevant graphical representations of GWAS output, to supplement a meaningful analysis.
+
 
 ## For End Users:
 To use this toolkit, clone this repository to your local machine running Python 3.5 or later. This toolkit requires sqlite3.  
@@ -23,6 +25,8 @@ Once library has been installed, you can import it into any .py file by typing:
 ```python
 import gwas_toolkit as gwtk
 ```
+
+Remember also to import SQLite3
 
 Before using our source code for analysis, users must be ready to provide complete results from a previously preformed GWAS. This means the data should have location (on the genome), allele, and p-value resulting from a completed GWAS analysis.  A common way to get this type of data is by using PLINK to run a GWAS analysis, and then exporting the output of that analysis as a comma-separated value (csv) file.  If the user provides exported GWAS output from PLINK, the csv file will have a column for genetic markers called MarkerID, a column for chromosome number called Chromosome, a column for location called Location, and a column for p-values called PValue.
 
@@ -60,6 +64,9 @@ One of the most important parts of determining statistical significance in a GWA
 ``` python
 gwas_object.Significant_Results()
 ```
+
+A **demonstration** of all of these functions are provided by running the code in: demo/demo_gwas_toolkit.py
+
 
 ## For Contributors: 
 
