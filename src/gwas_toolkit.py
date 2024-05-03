@@ -151,7 +151,7 @@ class GWAS_Object:
         """Identifies The Names Of Gene Markers With Significant P-Values."""
         # Use connection cursor to retrieve p-values and marker ID
         c = self.connection.cursor()
-        c.execute("SELECT MarkerID, PValue FROM gwas")
+        c.execute("SELECT MarkerID, CAST(PValue AS REAL) FROM gwas")
         data = c.fetchall()
 
         # Determine significant tests based on the Benjamani-Hochberg procedure
