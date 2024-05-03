@@ -38,17 +38,12 @@ class GWAS_Object:
         self.connection = conn
 
     @property
-    def N_of_Significant_Tests(self) -> int:
-        """Finds The Number Of Significant Tests."""
+    def Alpha_Level(self) -> float:
+        """Calculates The Adjusted Significance Level From The GWAS Data."""
         c = self.connection.cursor()
         c.execute("SELECT COUNT(*) FROM gwas WHERE PValue < ?", (0.05,))
         significant_tests_count = c.fetchone()[0]
-        return int(significant_tests_count)
-
-    @property
-    def Alpha_Level(self) -> float:
-        """Calculates The Adjusted Significance Level From The GWAS Data."""
-        alpha = 0.05 / self.N_of_Significant_Tests
+        alpha: float = 0.05 / significant_tests_count
         return alpha
 
     def Print_Manhattan_Plot(self) -> None:
@@ -177,27 +172,3 @@ def Parse_GWAS_Output(
                 ),
             )
     conn.commit()
-
-
-"""Demo For The GWAS Toolkit."""
-# Run The Following Code To See What gwas_toolkit Does.
-
-# Remember To First Run The Following Command In A Bash Terminal:
-# pip install git+https://github.com/adallen93/mb-gwas-toolkit@main
-
-
-# Parses The Dataset
-connection = sqlite3.connect("")
-Parse_GWAS_Output("demo/demo_GWAS_Output.csv", ",", connection)
-gwas_object = GWAS_Object(connection)
-
-# Find the Alpha Level, Corrected For Multiple Testing
-print(gwas_object.Alpha_Level)
-
-# Print A Manhattan Plot (Warning: Pretty Colors)
-gwas_object.Print_Manhattan_Plot()
-
-# Print A QQ Plot
-gwas_object.Print_QQ_Plot()
-
-connection.close()

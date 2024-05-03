@@ -13,16 +13,16 @@ connection = sqlite3.connect(":memory:")
 
 # Parses The Dataset
 Parse_GWAS_Output("demo/demo_GWAS_Output.csv", ",", connection)
-gwas_object = GWAS_Object(connection)
+gwasoutput = GWAS_Object(connection)
 
 # Find the Alpha Level, Corrected For Multiple Testing
-print(gwas_object.Alpha_Level)
+print(gwasoutput.Alpha_Level)
 
 # Print A Manhattan Plot (Warning: Pretty Colors)
-gwas_object.Print_Manhattan_Plot()
+gwasoutput.Print_Manhattan_Plot()
 
 # Print A QQ Plot
-gwas_object.Print_QQ_Plot()
+gwasoutput.Print_QQ_Plot()
 
 # Close The Connection
 connection.close()
