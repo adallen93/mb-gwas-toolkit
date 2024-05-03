@@ -25,36 +25,68 @@ import pytest
 from gwas_toolkit import GWAS_Object, Parse_GWAS_Output
 
 
-@pytest.fixture
-def gwas_object() -> Any:
-    """Fixture to create a GWAS_Object instance for testing."""
-    conn: sqlite3.Connection = sqlite3.connect(":memory:")
+def test_parse_data() -> None:
+    """A Test To Determine If Parse Data Interacts With SQL As Intended."""
+    conn = sqlite3.connect(":memory:")
     Parse_GWAS_Output("tests/test_data.csv", ",", conn)
-    gwas: GWAS_Object = GWAS_Object(conn)
-    yield gwas
+    c = conn.cursor()
+    c.execute("SELECT * FROM gwas")
+    allelle = c.fetchall()
+    assert len(allelle) > 0
     conn.close()
 
 
-def test_alpha_level(gwas_object: GWAS_Object) -> None:
+def setup_database(conn: sqlite3.Connection) -> None:
+    """Populates the SQLite database with data from the test_data.csv file."""
+    c = conn.cursor()
+    c.execute("""CREATE TABLE IF NOT EXISTS gwas (
+                 MarkerID TEXT,
+                 Chromosome TEXT,
+                 Location REAL,
+                 PValue REAL)""")
+    c.executemany(
+        """INSERT INTO gwas
+        (MarkerID, Chromosome, Location, PValue)
+        VALUES (?, ?, ?, ?)""",
+        [
+            ("Marker1", "1", "100", "0.1"),
+            ("Marker2", "2", "200", "0.001"),
+        ],
+    )
+    conn.commit()
+
+
+def test_alpha_level() -> None:
     """Test to check the alpha level calculation."""
-    # Assert that the alpha level is 0.05
-    assert gwas_object.Alpha_Level == 0.05
+    conn = sqlite3.connect(":memory:")
+    setup_database(conn)
+    gwas = GWAS_Object(conn)
+    assert gwas.Alpha_Level == 0.05
+    conn.close()
 
 
-def test_qq_plot_displayed(gwas_object: GWAS_Object, caplog: Any) -> None:
+def test_qq_plot_displayed(caplog: Any) -> None:
     """Test to check if QQ plot is displayed."""
-    # Assert that calling Print_QQ_Plot displays the QQ plot
-    gwas_object.Print_QQ_Plot()
+    conn = sqlite3.connect(":memory:")
+    setup_database(conn)
+    gwas = GWAS_Object(conn)
+
+    gwas.Print_QQ_Plot()
     assert "A Separate Window Displaying he QQ Plot Was Opened." in caplog.text
 
+    conn.close()
 
-def test_manhattan_plot_displayed(
-    gwas_object: GWAS_Object, caplog: Any
-) -> None:
+
+def test_manhattan_plot_displayed(caplog: Any) -> None:
     """Test to check if Manhattan plot is displayed."""
-    # Assert that calling Print_Manhattan_Plot displays the Manhattan plot
-    gwas_object.Print_Manhattan_Plot()
+    conn = sqlite3.connect(":memory:")
+    setup_database(conn)
+    gwas = GWAS_Object(conn)
+
+    gwas.Print_Manhattan_Plot()
     assert (
         "A Separate Window Displaying The Manhattan Plot Was Opened."
         in caplog.text
     )
+
+    conn.close()

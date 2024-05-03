@@ -51,7 +51,7 @@ class GWAS_Object:
         alpha = 0.05 / self.N_of_Significant_Tests
         return alpha
 
-    def Print_Manhattan_Plot(self) -> str:
+    def Print_Manhattan_Plot(self) -> None:
         """Creates A Manhattan Plot To Visualize The GWAS Analysis."""
         # Step 1: Retrieve Data From The SQLite Database.
         c = self.connection.cursor()
@@ -111,9 +111,8 @@ class GWAS_Object:
         )
         plt.ylim(0)
         plt.show()
-        return "A Separate Window Displaying The Manhattan Plot Was Opened."
 
-    def Print_QQ_Plot(self) -> str:
+    def Print_QQ_Plot(self) -> None:
         """Creates A QQ Plot To Visualize The GWAS Analysis."""
         # Step 1: Retrieve Data From The SQLite Database.
         c = self.connection.cursor()
@@ -144,7 +143,6 @@ class GWAS_Object:
         plt.ylabel("Observed -log10(P-Value)")
         plt.title("QQ Plot")
         plt.show()
-        return "A Separate Window Displaying he QQ Plot Was Opened."
 
 
 def Parse_GWAS_Output(
@@ -179,12 +177,3 @@ def Parse_GWAS_Output(
                 ),
             )
     conn.commit()
-
-
-# Parses The Dataset
-conn = sqlite3.connect(":memory:")
-Parse_GWAS_Output("tests/test_data.csv", ",", conn)
-gwas_object = GWAS_Object(conn)
-
-# Find the Alpha Level, Corrected For Multiple Testing
-print(gwas_object.Alpha_Level)
