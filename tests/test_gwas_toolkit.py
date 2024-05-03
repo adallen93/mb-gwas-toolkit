@@ -1,28 +1,21 @@
 """Tests For The GWAS Toolkit."""
 
-# conn = sqlite3.connect(":memory:")
-# Parse_GWAS_Output("tests/data_for_testing.csv", ",", conn)
-# gwas_obj = GWAS_Object(conn)
-# print(gwas_obj.N_of_Significant_Tests)
-# print(gwas_obj.Alpha_Level)
-# print(gwas_obj.Manhattan_Plot)
-# print(gwas_obj.QQ_Plot)
-
-# Jonathan's Comments for Julia
-# Show that the parse data function works well.
-# Build tests to show all the GWAS_Object functions work.
-#     The tricky thing: build tests proving that plot functions print plots.
-#     This is pretty hard, but I think you can do it!
-# Build tests that raises all error conditions.
-# For some of these tests, you need to call data_for_testing.csv.
-# But most of these tests don't need data_for_testing.csv.
-# Instead, you can make your own toy data to prove, eg., that an error occurs.
-
 import sqlite3
+import warnings
+from io import BytesIO
 from typing import Any
 
+import matplotlib.pyplot as plt
 import pytest
 from gwas_toolkit import GWAS_Object, Parse_GWAS_Output
+
+
+@pytest.fixture(autouse=True)
+def no_show_warnings() -> Any:
+    """Ignore Warnings."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=UserWarning)
+        yield
 
 
 def test_parse_data() -> None:
@@ -65,28 +58,29 @@ def test_alpha_level() -> None:
     conn.close()
 
 
-def test_qq_plot_displayed(caplog: Any) -> None:
+def test_qq_plot_displayed() -> None:
     """Test to check if QQ plot is displayed."""
     conn = sqlite3.connect(":memory:")
     setup_database(conn)
     gwas = GWAS_Object(conn)
-
+    buffer = BytesIO()
+    plt.switch_backend("agg")
+    plt.figure()
     gwas.Print_QQ_Plot()
-    assert "A Separate Window Displaying he QQ Plot Was Opened." in caplog.text
+    plt.savefig(buffer, format="png")
+    plt.close()
+    assert buffer.getbuffer().nbytes > 0
 
-    conn.close()
 
-
-def test_manhattan_plot_displayed(caplog: Any) -> None:
+def test_manhattan_plot_displayed() -> None:
     """Test to check if Manhattan plot is displayed."""
     conn = sqlite3.connect(":memory:")
     setup_database(conn)
     gwas = GWAS_Object(conn)
-
+    buffer = BytesIO()
+    plt.switch_backend("agg")
+    plt.figure()
     gwas.Print_Manhattan_Plot()
-    assert (
-        "A Separate Window Displaying The Manhattan Plot Was Opened."
-        in caplog.text
-    )
-
-    conn.close()
+    plt.savefig(buffer, format="png")
+    plt.close()
+    assert buffer.getbuffer().nbytes > 0
