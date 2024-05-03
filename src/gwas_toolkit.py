@@ -43,6 +43,7 @@ class GWAS_Object:
         c = self.connection.cursor()
         c.execute("SELECT COUNT(*) FROM gwas WHERE PValue < ?", (0.05,))
         significant_tests_count = c.fetchone()[0]
+        c.close()
         alpha: float = 0.05 / significant_tests_count
         return alpha
 
@@ -54,6 +55,7 @@ class GWAS_Object:
         data = c.fetchall()
         if not data:
             raise DataNotFoundError("No data to plot.")
+        c.close()
 
         # Step 2: Build The Plot From Chromosome Location and P-Value.
         chromosomes: Dict[Any, Any] = {}
@@ -115,6 +117,7 @@ class GWAS_Object:
         pvalues = np.array(c.fetchall(), dtype=float)
         if not pvalues.any():
             raise DataNotFoundError("No data to plot.")
+        c.close()
 
         # Step 2: Get Theoretical Quantiles With The GWAS Output's PValues.
         n = len(pvalues)
@@ -172,3 +175,23 @@ def Parse_GWAS_Output(
                 ),
             )
     conn.commit()
+
+
+# Open The Connection
+connection = sqlite3.connect(":memory:")
+
+# Parses The Dataset
+Parse_GWAS_Output("demo/demo_GWAS_Output.csv", ",", connection)
+gwasoutput = GWAS_Object(connection)
+
+# Find the Alpha Level, Corrected For Multiple Testing
+print(gwasoutput.Alpha_Level)
+
+# Print A Manhattan Plot (Warning: Pretty Colors)
+gwasoutput.Print_Manhattan_Plot()
+
+# Print A QQ Plot
+gwasoutput.Print_QQ_Plot()
+
+# Close The Connection
+connection.close()
