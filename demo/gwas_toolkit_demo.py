@@ -8,10 +8,12 @@ import sqlite3
 
 from gwas_toolkit import GWAS_Object, Parse_GWAS_Output
 
+# Open The Connection
+connection = sqlite3.connect(":memory:")
+
 # Parses The Dataset
-conn = sqlite3.connect(":memory:")
-Parse_GWAS_Output("demo/demo_GWAS_Output.csv", ",", conn)
-gwas_object = GWAS_Object(conn)
+Parse_GWAS_Output("demo/demo_GWAS_Output.csv", ",", connection)
+gwas_object = GWAS_Object(connection)
 
 # Find the Alpha Level, Corrected For Multiple Testing
 print(gwas_object.Alpha_Level)
@@ -21,3 +23,6 @@ gwas_object.Print_Manhattan_Plot()
 
 # Print A QQ Plot
 gwas_object.Print_QQ_Plot()
+
+# Close The Connection
+connection.close()
