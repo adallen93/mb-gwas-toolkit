@@ -1,4 +1,8 @@
 """Demo For The GWAS Toolkit."""
+# Run The Following Code To See What gwas_toolkit Does.
+
+# Remember To First Run The Following Command In A Bash Terminal:
+# pip install git+https://github.com/adallen93/mb-gwas-toolkit@main
 
 import sqlite3
 
