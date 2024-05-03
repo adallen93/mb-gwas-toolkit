@@ -9,11 +9,8 @@ This Module Provides The Following Functions:
 This Module Provides The Following Classes:
 - GWAS_Object: An Object Containing The Output Of A GWAS Analysis.
 - DataNotFoundError: An Error Called When GWAS Output Cannot Be Found.
-- NoSignificantGenesError: An Error Called When There Are No Significant Genes.
 
 This Module Provides The Following Attributes of a GWAS Object:
-- N_of_Significant_Tests: Provides The Number Of Sig. Tests For The Given Data.
-- Alpha_Level: Default Sig Level Is 0.05 Unless Specified In Initialization
 - Manhattan_Plot: Creates A Manhattan Plot For A Given GWAS Object.
 - QQ_Plot: Creates A QQ Plot For A Given GWAS Object.
 - Significant_Results: A Function That Lists The Significant Gene Markers.
@@ -258,6 +255,3 @@ def Benjamini_Hochberg_Procedure(
         test_results[id] = p_value < (q * index) / len(data)
 
     return test_results
-
-
-# 0.01 < (0.05 * 1) / 3
