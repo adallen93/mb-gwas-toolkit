@@ -153,7 +153,9 @@ class GWAS_Object:
         c = self.connection.cursor()
         c.execute("SELECT MarkerID, CAST(PValue AS REAL) FROM gwas")
         data = c.fetchall()
-
+        print("####### Hi! Currently in Significant_Results #########")
+        print("data here:")
+        print(data)
         # Determine significant tests based on the Benjamani-Hochberg procedure
         test_results = Benjamini_Hochberg_Procedure(data, self.Alpha_Level)
         significant_gene_markers: list[str] = []
@@ -183,7 +185,7 @@ def Parse_GWAS_Output(
                  MarkerID TEXT,
                  Chromosome TEXT,
                  Location REAL,
-                 PValue REAL,
+                 PValue TEXT,
                  FOREIGN KEY (MarkerID) REFERENCES gwas(MarkerID))""")
 
     # Open the GWAS output file
@@ -223,6 +225,9 @@ def Benjamini_Hochberg_Procedure(
 ) -> dict[str, bool]:
     """Multiple testing correction which controls FDR."""
     test_results: dict[str, bool] = {}
+    print("####### Hi! Currently in Benjamini_Hochberg_Procedure #########")
+    print("data here:")
+    print(data)
 
     # Type check for `data`
     if not all(

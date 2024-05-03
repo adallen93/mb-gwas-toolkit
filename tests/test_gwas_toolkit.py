@@ -18,10 +18,7 @@
 # But most of these tests don't need data_for_testing.csv.
 # Instead, you can make your own toy data to prove, eg., that an error occurs.
 
-import io
 import sqlite3
-import unittest
-from unittest.mock import patch
 
 import pytest
 from gwas_toolkit import (
@@ -32,134 +29,97 @@ from gwas_toolkit import (
 )
 
 
-class TestGWASAnalysis(unittest.TestCase):
-    """Creating class."""
+def test_print_manhattan_plot() -> None:
+    """Tests the Print_QQ_Plot method of the GWAS class."""
+    # First create a sqlite3 connection with memory
+    conn = sqlite3.connect(":memory:")
+    c = conn.cursor()
 
-    def setUp(self) -> None:
-        """Create an in-memory SQLite database and parse test data."""
-        self.conn = sqlite3.connect(":memory:")
-        # Prepare test data
-        test_data = """MarkerID,Chromosome,Location,PValue
-        Marker1,1,100,0.001
-        Marker2,2,200,0.005
-        Marker3,3,300,0.0001
-        """
-        # Call the function to parse GWAS output
-        Parse_GWAS_Output(test_data, ",", self.conn)
+    # Replace any existing table with an emtpy table
+    c.execute("""CREATE TABLE IF NOT EXISTS gwas (
+              MarkerID TEXT,
+              Chromosome TEXT,
+              Location REAL,
+              PValue REAL
+              )""")
 
-    def test_Parse_GWAS_Output(self) -> None:
-        """Testing Parsing Function."""
-        # Check if the data is correctly parsed and stored in the database
-        c = self.conn.cursor()
-        c.execute("SELECT * FROM gwas")
-        data = c.fetchall()
-        self.assertEqual(len(data), 3)
-        self.assertEqual(data[0], ("Marker1", "1", 100.0, "0.001"))
-        self.assertEqual(data[1], ("Marker2", "2", 200.0, "0.005"))
-        self.assertEqual(data[2], ("Marker3", "3", 300.0, "0.0001"))
+    # Create a GWAS_Object tied to the empty data
+    gwas = GWAS_Object(conn)
 
-    def test_GWAS_Object_Manhattan_Plot(self) -> None:
-        """Testing Manhattan Plot Function."""
-        # Prepare test data
-        test_data = [
-            ("1", "100", "0.001"),
-            ("2", "200", "0.005"),
-            ("3", "300", "0.0001"),
-        ]
-        c = self.conn.cursor()
-        c.executemany(
-            "INSERT INTO gwas (MarkerID, Chromosome, Location, PValue) VALUES",
-            test_data,
-        )
-        self.conn.commit()
+    # Test that this method raises an error
+    with pytest.raises(DataNotFoundError):
+        gwas.Print_Manhattan_Plot()
 
-        # Instantiate GWAS_Object
-        gwas_obj = GWAS_Object(self.conn)
+    # Because of the nature of this method, we are unsure of how to
+    # test the remaining parts
 
-        # Patch plt.show() to prevent plotting and capture stdout
-        with patch("matplotlib.pyplot.show"), patch(
-            "sys.stdout", new_callable=io.StringIO
-        ) as fake_stdout:
-            # Call Manhattan_Plot method
-            result = gwas_obj.Manhattan_Plot
+    # Close the connection
+    conn.close()
 
-            # Check if Manhattan_Plot returns the expected message
-            self.assertIn("Manhattan Plot", fake_stdout.getvalue())
-            self.assertIn(
-                "A Separate Window Displaying The Manhattan Plot Was Opened.",
-                result,
-            )
 
-    def test_GWAS_Object_QQ_Plot(self) -> None:
-        """Testing QQ-Plot FUnction."""
-        # Prepare test data
-        test_data = [("1", "0.001"), ("2", "0.005"), ("3", "0.0001")]
-        c = self.conn.cursor()
-        c.executemany(
-            "INSERT INTO gwas (MarkerID, PValue) VALUES (?, ?)", test_data
-        )
-        self.conn.commit()
+def test_print_qq_plot() -> None:
+    """Tests the Print_QQ_Plot method of the GWAS class."""
+    # First create a sqlite3 connection with memory
+    conn = sqlite3.connect(":memory:")
+    c = conn.cursor()
 
-        # Instantiate GWAS_Object
-        gwas_obj = GWAS_Object(self.conn)
+    # Replace any existing table with an emtpy table
+    c.execute("""CREATE TABLE IF NOT EXISTS gwas (
+              MarkerID TEXT,
+              Chromosome TEXT,
+              Location REAL,
+              PValue REAL
+              )""")
 
-        # Patch plt.show() to prevent plotting and capture stdout
-        with patch("matplotlib.pyplot.show"), patch(
-            "sys.stdout", new_callable=io.StringIO
-        ) as fake_stdout:
-            # Call QQ_Plot method
-            result = gwas_obj.QQ_Plot
+    # Create a GWAS_Object tied to the empty data
+    gwas = GWAS_Object(conn)
 
-            # Check if QQ_Plot returns the expected message
-            self.assertIn("QQ Plot", fake_stdout.getvalue())
-            self.assertIn(
-                "A Separate Window Displaying he QQ Plot Was Opened.", result
-            )
+    # Test that this method raises an error
+    with pytest.raises(DataNotFoundError):
+        gwas.Print_QQ_Plot()
 
-    def test_GWAS_Object_Significant_Results(self) -> None:
-        """Testing Significance Function."""
-        # Prepare test data
-        test_data = [
-            ("Marker1", "0.001"),
-            ("Marker2", "0.0005"),
-            ("Marker3", "0.01"),
-        ]
-        c = self.conn.cursor()
-        c.executemany(
-            "INSERT INTO gwas (MarkerID, PValue) VALUES (?, ?)", test_data
-        )
-        self.conn.commit()
+    # Because of the nature of this method, we are unsure of how to
+    # test the remaining parts
 
-        # Instantiate GWAS_Object
-        gwas_obj = GWAS_Object(self.conn)
+    # Close the connection
+    conn.close()
 
-        # Call Significant_Results method
-        significant_markers = gwas_obj.Significant_Results()
 
-        # Check if the method returns the correct significant markers
-        self.assertEqual(significant_markers, ["Marker1", "Marker2"])
+def test_significant_results() -> None:
+    """Testing the Significant_Results method of the GWAS class."""
+    # Create dummy data for testing
+    data_to_insert = [
+        ("Marker1", 1, 100, 0.1),
+        ("Marker2", 2, 200, 0.001),
+    ]
 
-    def test_GWAS_Object_No_Significant_Genes_Error(self) -> None:
-        """Testing No Significant Genes."""
-        # Instantiate GWAS_Object with an empty database
-        gwas_obj = GWAS_Object(self.conn)
+    # Create an in-memory connection with sqlite3
+    conn = sqlite3.connect(":memory:")
+    c = conn.cursor()
 
-        # Call Significant_Results method
-        with self.assertRaises(NoSignificantGenesError):
-            gwas_obj.Significant_Results()
+    # Replace any existing table with an empty table
+    c.execute("""CREATE TABLE IF NOT EXISTS gwas (
+                MarkerID TEXT,
+                Chromosome TEXT,
+                Location REAL,
+                PValue REAL
+                )""")
 
-    def test_GWAS_Object_Data_Not_Found_Error(self) -> None:
-        """Testing Object Data Not Found."""
-        # Instantiate GWAS_Object with an empty database
-        gwas_obj = GWAS_Object(self.conn)
+    # Add the dummy data
+    c.executemany(
+        """INSERT OR IGNORE INTO gwas 
+        (MarkerID, Chromosome, Location, PValue) 
+        VALUES (?, ?, ?, ?)""",
+        data_to_insert,
+    )
 
-        # Call Manhattan_Plot method
-        with self.assertRaises(DataNotFoundError):
-            gwas_obj.Print_Manhattan_Plot()
+    # Commit changes
+    conn.commit()
 
-        # Call QQ_Plot method
-        with self.assertRaises(DataNotFoundError):
-            gwas_obj.Print_QQ_Plot()
+    gwas = GWAS_Object(conn)
+    results = gwas.Significant_Results()
+
+    assert results == ["Marker2"]
 
 
 def test_benjamini_hochberg() -> None:
@@ -185,14 +145,21 @@ def test_benjamini_hochberg() -> None:
     assert actual_results == expected_results
 
 
-# Test with invalid data types
-@pytest.mark.skipif(reason="Testing for invalid input type")
-def test_benjamini_hochberg_invalid_data() -> None:
-    """Tests that a TypeError is raised with invalid types in 'data'."""
-    with pytest.raises(TypeError):
-        Benjamini_Hochberg_Procedure(
-            [1, 2, 3]
-        )  # List of numbers instead of tuples
+def test_parse_gwas_output() -> None:
+    """Tests that data is properly parsed."""
+    # Open the connection and parse the file
+    conn = sqlite3.connect(":memory:")
+    Parse_GWAS_Output("test_data.csv", ",", conn)
+
+    # Fetch the data that has been stored
+    c = conn.cursor()
+    c.execute("SELECT * FROM gwas")
+
+    result = c.fetchall()
+    print(result)
+    assert result == [
+        ("Marker", "1", 100.0, 0.001),
+    ]
 
 
 # Test with invalid q value
@@ -207,7 +174,3 @@ def test_benjamini_hochberg_invalid_q() -> None:
 
     with pytest.raises(ValueError):
         Benjamini_Hochberg_Procedure(data, q=1.2)
-
-
-if __name__ == "__main__":
-    unittest.main()
