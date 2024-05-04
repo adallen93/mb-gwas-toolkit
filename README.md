@@ -23,7 +23,7 @@ pip install git+https://github.com/adallen93/mb-gwas-toolkit@main
 Once library has been installed, you can import it into any .py file by typing:
 
 ```python
-import gwas_toolkit as gwtk
+import gwas_toolkit_v1 as gwtk
 ```
 
 Remember also to import SQLite3
@@ -35,8 +35,8 @@ The package then provides a method to parse a csv file of those specifications i
 
 ```python
 conn = sqlite3.connect(":memory:")
-Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
-gwas_object = GWAS_Object(conn)
+gwtk.Parse_GWAS_Output("GWAS_Output.csv", ",", conn)
+gwas_object = gwtk.GWAS_Object(conn)
 ```
 
 #### Manhattan Plot
@@ -56,7 +56,7 @@ gwas_object.Print_QQ_Plot()
 ```
 The QQ plot is a graphical representation of the deviation of the observed P values from the null hypothesis. The observed P values for each SNP are sorted from largest to smallest and plotted against expected values from a theoretical chi-squared distribution. 
 
-A **demonstration** of all of these functions are provided by running the sample code in: src/demo_GWAS_Outcome.py
+Some sample data is provided in: [demo_GWAS_Output.csv](src/demo_GWAS_Output.csv).
 
 
 ## For Contributors: 
